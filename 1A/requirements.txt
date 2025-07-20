@@ -1,0 +1,4 @@
+PyMuPDF==1.23.14
+pdfminer.six==20221105
+pathlib
+psutil==5.9.5
