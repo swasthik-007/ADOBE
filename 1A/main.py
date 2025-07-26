@@ -321,10 +321,27 @@ class PDFOutlineExtractor:
         return title.strip()
     
     def classify_heading_level(self, block: Dict[str, Any], font_stats: Dict[str, float]) -> str:
-        """Classify text block as H1, H2, H3, or regular text with very strict heading detection."""
+        """Classify text block as H1, H2, H3, or regular text with improved heading detection."""
         text = block["text"].strip()
         font_size = block["font_size"]
         is_bold = block["is_bold"]
+        
+        # Early filtering: obvious non-headings
+        if self._is_definitely_body_text(text):
+            return "text"
+        
+        # Filter out mathematical expressions and formulas
+        if self._is_mathematical_expression(text):
+            return "text"
+        
+        # Must be short enough to be a heading (more flexible for multilingual)
+        if len(text) > 80:  # Slightly more flexible for longer titles
+            return "text"
+        
+        # Must not contain too many words (headings are concise)
+        word_count = len(text.split())
+        if word_count > 12:  # Slightly more flexible
+            return "text"
         
         # Priority 1: Numbered sections (highest confidence) - these override other checks
         numbered_level = self._get_numbered_section_level(text)
@@ -335,52 +352,56 @@ class PDFOutlineExtractor:
         if self._is_standard_heading(text):
             return "H1"  # Most standard headings are main sections
         
-        # Priority 3: Japanese text heading detection
+        # Priority 3: Chapter/Section titles with specific patterns
+        chapter_level = self._get_chapter_section_level(text)
+        if chapter_level:
+            return chapter_level
+        
+        # Priority 4: Japanese text heading detection
         japanese_level = self._is_japanese_heading(text)
         if japanese_level:
             return japanese_level
-        
-        # Apply strict filters for remaining text
-        if self._is_definitely_body_text(text):
-            return "text"
-        
-        # Must be short enough to be a heading
-        if len(text) > 60:  # Strict length limit
-            return "text"
-        
-        # Must not contain too many words (headings are concise)
-        word_count = len(text.split())
-        if word_count > 10:  # Very strict word limit
-            return "text"
         
         # Get font size thresholds
         median_size = font_stats["median_size"]
         large_size = font_stats["large_size"]
         very_large_size = font_stats["very_large_size"]
         
-        # Priority 3: Very strict font-based detection 
-        font_ratio = font_size / median_size
+        # Calculate font ratio
+        font_ratio = font_size / median_size if median_size > 0 else 1.0
         
-        # Must be significantly larger font AND bold to be considered
-        if font_ratio >= 1.4 and is_bold:
-            # Additional content checks
-            if self._looks_like_heading_content(text):
-                if font_ratio >= 1.6:
-                    return "H1"
-                elif font_ratio >= 1.4:
-                    return "H2"
-                else:
-                    return "H3"
+        # Priority 5: Font-based detection with improved logic
+        heading_confidence = self._calculate_heading_confidence(text, font_ratio, is_bold)
+        
+        # High confidence H1 detection
+        if heading_confidence >= 0.9:
+            if font_ratio >= 1.6 or self._is_likely_main_heading(text):
+                return "H1"
+            elif font_ratio >= 1.3:
+                return "H2"
+            else:
+                return "H3"
+        
+        # Medium confidence detection
+        elif heading_confidence >= 0.7:
+            if font_ratio >= 1.8:  # Very large font compensates for lower confidence
+                return "H1"
+            elif font_ratio >= 1.5 and is_bold:
+                return "H2"
+            elif font_ratio >= 1.3 and (is_bold or self._has_heading_patterns(text)):
+                return "H3"
+        
+        # Low confidence but strong font indicators
+        elif heading_confidence >= 0.5:
+            if font_ratio >= 2.0 and is_bold:  # Extremely large and bold
+                return "H1"
+            elif font_ratio >= 1.7 and is_bold and self._looks_like_heading_content(text):
+                return "H2"
         
         # Check multilingual content
         lang, multilang_level = self._detect_language_and_classify(text)
         if multilang_level:
             return multilang_level
-        
-        # Very high confidence cases only
-        if font_ratio >= 1.8:  # Extremely large font
-            if self._looks_like_heading_content(text):
-                return "H1"
         
         return "text"
     
@@ -671,9 +692,13 @@ class PDFOutlineExtractor:
         return None
     
     def _get_numbered_section_level(self, text: str) -> str:
-        """Determine heading level for numbered sections."""
+        """Determine heading level for numbered sections with improved accuracy."""
         # Main sections: "1. INTRODUCTION", "2. METHODS", etc.
         if re.match(r'^\d+\.\s+[A-Z][A-Z\s]*$', text):
+            return "H1"
+        
+        # Main sections with mixed case: "1. Introduction", "2. Methodology"
+        if re.match(r'^\d+\.\s+[A-Z][a-z\s]+$', text) and len(text.split()) <= 4:
             return "H1"
         
         # Subsections: "1.1. Something", "3.2. Analysis", "3.1. Magnetic-energy Dissipation" 
@@ -684,21 +709,211 @@ class PDFOutlineExtractor:
         if re.match(r'^\d+\.\d+\.\d+\.?\s+[A-Z]', text):
             return "H3"
         
-        # Roman numerals (common in exams): "I.", "II.", "III.", "IV.", "V.", etc.
-        if re.match(r'^[IVX]+\.\s*$', text.strip()):
-            return "H3"  # Question numbers are usually sub-level
-        
-        # More Roman numerals with text
+        # Roman numerals with text (main sections)
         if re.match(r'^[IVX]+\.\s+[A-Z]', text):
             return "H1"
         
-        # Numbered questions: "1.", "2.", "3." (standalone)
+        # Roman numerals standalone (often question numbers)
+        if re.match(r'^[IVX]+\.\s*$', text.strip()):
+            # If it's a simple roman numeral, it's likely a question number (H2)
+            # But if followed by a period and space, could be a main section
+            if len(text.strip()) <= 4:  # Like "I.", "II.", "III."
+                return "H2"  # Question numbers
+            else:
+                return "H1"
+        
+        # Numbered questions/items: "1.", "2.", "3." (standalone)
         if re.match(r'^\d+\.\s*$', text.strip()):
             return "H2"  # Question numbers
+        
+        # Lettered sections: "A.", "B.", "C." (often subsections)
+        if re.match(r'^[A-Z]\.\s*$', text.strip()):
+            return "H3"
+        
+        # Lettered sections with text: "A. Introduction"
+        if re.match(r'^[A-Z]\.\s+[A-Z]', text):
+            return "H2"
         
         # Check for variations with colons: "3.2: Analysis"  
         if re.match(r'^\d+\.\d+:\s+[A-Z]', text):
             return "H2"
+        
+        # Parenthetical numbers: "(1)", "(2)" - usually subsections
+        if re.match(r'^\(\d+\)\s*$', text.strip()):
+            return "H3"
+        
+        # Parenthetical numbers with text: "(1) Introduction"
+        if re.match(r'^\(\d+\)\s+[A-Z]', text):
+            return "H3"
+        
+        return None
+        
+        # Check for variations with colons: "3.2: Analysis"  
+        if re.match(r'^\d+\.\d+:\s+[A-Z]', text):
+            return "H2"
+        
+        return None
+    
+    def _is_mathematical_expression(self, text: str) -> bool:
+        """Check if text is likely a mathematical expression or formula."""
+        # Contains mathematical operators and symbols
+        math_symbols = ['=', '±', '∼', '∈', '∀', '∃', '∇', '∂', '∫', '∑', '∏', '≤', '≥', '≠', '≈', '→', '←', '↔']
+        math_count = sum(1 for symbol in math_symbols if symbol in text)
+        
+        # High density of mathematical symbols
+        if len(text) > 0 and math_count / len(text) > 0.1:
+            return True
+        
+        # Common mathematical patterns
+        math_patterns = [
+            r'^\d+\s*[=<>≤≥±∼]\s*\d+',  # Simple equations like "4 = 2"
+            r'^[a-zA-Z]\s*[=<>≤≥]\s*[a-zA-Z0-9]',  # Variable equations like "x = 5"
+            r'^\$.*\$$',  # LaTeX math expressions
+            r'^\\[a-zA-Z]+\{.*\}$',  # LaTeX commands
+            r'^\([^)]+\)\s*=',  # Equations in parentheses
+            r'^[A-Z][a-z]*\s*\d+\s*[=:]',  # Like "Figure 1:" or "Table 2:"
+            r'^\d+\s*π\s*q\s*\d*',  # Physics formulas like "4 πq 2"
+            r'^E\s*=.*mc',  # Famous equations
+            r'^[xyz]\s*[=<>]',  # Variable assignments
+        ]
+        
+        return any(re.match(pattern, text) for pattern in math_patterns)
+    
+    def _calculate_heading_confidence(self, text: str, font_ratio: float, is_bold: bool) -> float:
+        """Calculate confidence score (0-1) that text is a heading."""
+        confidence = 0.0
+        
+        # Font size contributes to confidence
+        if font_ratio >= 2.0:
+            confidence += 0.4
+        elif font_ratio >= 1.6:
+            confidence += 0.3
+        elif font_ratio >= 1.3:
+            confidence += 0.2
+        elif font_ratio >= 1.1:
+            confidence += 0.1
+        
+        # Bold formatting adds confidence
+        if is_bold:
+            confidence += 0.2
+        
+        # Length and word count
+        word_count = len(text.split())
+        if word_count <= 3:
+            confidence += 0.2
+        elif word_count <= 6:
+            confidence += 0.1
+        elif word_count > 12:
+            confidence -= 0.3
+        
+        # Capitalization patterns
+        if text.isupper() and len(text) <= 40:
+            confidence += 0.2
+        elif text.istitle():
+            confidence += 0.1
+        elif text[0].isupper() if text else False:
+            confidence += 0.05
+        
+        # Heading-like patterns
+        if self._has_heading_patterns(text):
+            confidence += 0.3
+        
+        # Position indicators (start of line, center alignment would be ideal but not available)
+        if not text.startswith(' '):  # Doesn't start with space (likely not indented)
+            confidence += 0.05
+        
+        # Punctuation patterns
+        if text.endswith(':'):
+            confidence += 0.1
+        elif text.endswith('.') and not self._is_abbreviation_ending(text):
+            confidence -= 0.2  # Sentences usually end with period
+        
+        # Content indicators
+        if self._is_likely_main_heading(text):
+            confidence += 0.2
+        
+        return min(1.0, max(0.0, confidence))
+    
+    def _has_heading_patterns(self, text: str) -> bool:
+        """Check for common heading patterns."""
+        patterns = [
+            r'^(CHAPTER|Chapter|chapter)\s+\d+',
+            r'^(SECTION|Section|section)\s+\d+',
+            r'^(PART|Part|part)\s+\d+',
+            r'^\d+\.\s*[A-Z]',  # "1. Something"
+            r'^[A-Z][A-Z\s]+$',  # ALL CAPS
+            r'^[A-Z][a-z]+\s+[A-Z][a-z]+',  # Title Case
+            r'^(Abstract|Introduction|Conclusion|References|Bibliography|Acknowledgments)$',
+            # Multilingual patterns
+            r'^(問題|質問|説明|章|節)\s*\d*',  # Japanese
+            r'^(问题|問題|章节|章節|部分)\s*\d*',  # Chinese
+            r'^(문제|질문|장|절)\s*\d*',  # Korean
+            r'^(سؤال|فصل|باب|قسم)\s*\d*',  # Arabic
+            r'^(शीर्षक|अध्याय|भाग|प्रश्न)\s*\d*',  # Hindi
+        ]
+        
+        return any(re.match(pattern, text) for pattern in patterns)
+    
+    def _is_likely_main_heading(self, text: str) -> bool:
+        """Check if text is likely a main section heading (H1)."""
+        main_heading_indicators = [
+            # English
+            'abstract', 'introduction', 'background', 'methodology', 'methods',
+            'results', 'discussion', 'conclusion', 'conclusions', 'references',
+            'bibliography', 'acknowledgments', 'acknowledgements', 'appendix',
+            # Common academic sections
+            'related work', 'literature review', 'experimental setup', 'data analysis',
+            'future work', 'limitations', 'summary', 'overview',
+            # Multilingual equivalents
+            '要約', '序論', '結論', '参考文献',  # Japanese
+            '摘要', '介绍', '结论', '参考文献',  # Chinese Simplified
+            '摘要', '介紹', '結論', '參考文獻',  # Chinese Traditional
+            '초록', '서론', '결론', '참고문헌',  # Korean
+            'خلاصة', 'مقدمة', 'خاتمة', 'المراجع',  # Arabic
+            'सार', 'परिचय', 'निष्कर्ष', 'संदर्भ',  # Hindi
+        ]
+        
+        text_lower = text.lower().strip()
+        return any(indicator in text_lower for indicator in main_heading_indicators)
+    
+    def _get_chapter_section_level(self, text: str) -> str:
+        """Detect chapter/section level headings with improved accuracy."""
+        # Chapter patterns - always H1
+        chapter_patterns = [
+            r'^(CHAPTER|Chapter|chapter)\s+\d+',
+            r'^(PART|Part|part)\s+[IVX\d]+',
+            r'^第\s*\d+\s*章',  # Chinese/Japanese chapter
+            r'^제\s*\d+\s*장',  # Korean chapter
+            r'^الفصل\s*\d+',  # Arabic chapter
+            r'^अध्याय\s*\d+',  # Hindi chapter
+        ]
+        
+        for pattern in chapter_patterns:
+            if re.match(pattern, text):
+                return "H1"
+        
+        # Section patterns - usually H2
+        section_patterns = [
+            r'^(SECTION|Section|section)\s+\d+',
+            r'^第\s*\d+\s*節',  # Chinese/Japanese section
+            r'^제\s*\d+\s*절',  # Korean section
+            r'^القسم\s*\d+',  # Arabic section
+            r'^खंड\s*\d+',  # Hindi section
+        ]
+        
+        for pattern in section_patterns:
+            if re.match(pattern, text):
+                return "H2"
+        
+        # Subsection patterns - H3
+        subsection_patterns = [
+            r'^(SUBSECTION|Subsection|subsection)\s+\d+',
+            r'^\d+\.\d+\.\d+\s+',  # 1.2.3 format
+        ]
+        
+        for pattern in subsection_patterns:
+            if re.match(pattern, text):
+                return "H3"
         
         return None
     

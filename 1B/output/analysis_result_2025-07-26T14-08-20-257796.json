@@ -1,0 +1,202 @@
+{
+    "metadata": {
+        "input_documents": [
+            "Learn Acrobat - Create and Convert_1.pdf",
+            "Learn Acrobat - Create and Convert_2.pdf",
+            "Learn Acrobat - Edit_1.pdf",
+            "Learn Acrobat - Edit_2.pdf",
+            "Learn Acrobat - Export_1.pdf",
+            "Learn Acrobat - Export_2.pdf",
+            "Learn Acrobat - Fill and Sign.pdf",
+            "Learn Acrobat - Generative AI_1.pdf",
+            "Learn Acrobat - Generative AI_2.pdf",
+            "Learn Acrobat - Request e-signatures_1.pdf",
+            "Learn Acrobat - Request e-signatures_2.pdf",
+            "Learn Acrobat - Share_1.pdf",
+            "Learn Acrobat - Share_2.pdf",
+            "Test Your Acrobat Exporting Skills.pdf",
+            "The Ultimate PDF Sharing Checklist.pdf"
+        ],
+        "persona": "HR professional",
+        "job_to_be_done": "Create and manage fillable forms for onboarding and compliance.",
+        "processing_timestamp": "2025-07-26T14:08:20.257796"
+    },
+    "extracted_sections": [
+        {
+            "document": "Learn Acrobat - Fill and Sign.pdf",
+            "page_number": 8,
+            "section_title": "Is the form fillable?",
+            "importance_rank": 1
+        },
+        {
+            "document": "Learn Acrobat - Create and Convert_2.pdf",
+            "page_number": 8,
+            "section_title": "Compliance Standard",
+            "importance_rank": 2
+        },
+        {
+            "document": "Learn Acrobat - Fill and Sign.pdf",
+            "page_number": 12,
+            "section_title": "Interactive form",
+            "importance_rank": 3
+        },
+        {
+            "document": "Learn Acrobat - Fill and Sign.pdf",
+            "page_number": 10,
+            "section_title": "Complete  then suggests or even automatically enters responses that match your typing in",
+            "importance_rank": 4
+        },
+        {
+            "document": "Learn Acrobat - Fill and Sign.pdf",
+            "page_number": 2,
+            "section_title": "Types of PDF forms",
+            "importance_rank": 5
+        },
+        {
+            "document": "Learn Acrobat - Create and Convert_1.pdf",
+            "page_number": 22,
+            "section_title": "2.   Optionally, select objects and text (Word) or slides (PowerPoint), as needed.",
+            "importance_rank": 6
+        },
+        {
+            "document": "Learn Acrobat - Request e-signatures_1.pdf",
+            "page_number": 19,
+            "section_title": "Page 19",
+            "importance_rank": 7
+        },
+        {
+            "document": "Learn Acrobat - Create and Convert_1.pdf",
+            "page_number": 11,
+            "section_title": "Create a blank PDF",
+            "importance_rank": 8
+        },
+        {
+            "document": "Learn Acrobat - Create and Convert_1.pdf",
+            "page_number": 21,
+            "section_title": "Page 21",
+            "importance_rank": 9
+        },
+        {
+            "document": "Learn Acrobat - Fill and Sign.pdf",
+            "page_number": 12,
+            "section_title": "You can change a flat form to a fillable form by either using the  Prepare Form  tool or",
+            "importance_rank": 10
+        }
+    ],
+    "subsection_analysis": [
+        {
+            "document": "Learn Acrobat - Fill and Sign.pdf",
+            "section_title": "Is the form fillable?",
+            "refined_text": "Not all forms are fillable",
+            "page_number": 8
+        },
+        {
+            "document": "Learn Acrobat - Fill and Sign.pdf",
+            "section_title": "Is the form fillable?",
+            "refined_text": "interactive  fillable  forms",
+            "page_number": 8
+        },
+        {
+            "document": "Learn Acrobat - Create and Convert_2.pdf",
+            "section_title": "Compliance Standard",
+            "refined_text": "Specify the PDF/A or PDF/E compliance standard, or none",
+            "page_number": 8
+        },
+        {
+            "document": "Learn Acrobat - Fill and Sign.pdf",
+            "section_title": "Interactive form",
+            "refined_text": "To create an interactive form, use the  Prepare Forms  tool",
+            "page_number": 12
+        },
+        {
+            "document": "Learn Acrobat - Fill and Sign.pdf",
+            "section_title": "Interactive form",
+            "refined_text": "See  Create a form from an existing",
+            "page_number": 12
+        },
+        {
+            "document": "Learn Acrobat - Fill and Sign.pdf",
+            "section_title": "Complete  then suggests or even automatically enters responses that match your typing in",
+            "refined_text": "The  Auto-Complete  feature is off by default, so you must enable it in the forms",
+            "page_number": 10
+        },
+        {
+            "document": "Learn Acrobat - Fill and Sign.pdf",
+            "section_title": "Complete  then suggests or even automatically enters responses that match your typing in",
+            "refined_text": "found and corrected later, edit the list in the preferences",
+            "page_number": 10
+        },
+        {
+            "document": "Learn Acrobat - Fill and Sign.pdf",
+            "section_title": "Types of PDF forms",
+            "refined_text": "Interactive forms : These contain fields that you can select and fill in",
+            "page_number": 2
+        },
+        {
+            "document": "Learn Acrobat - Fill and Sign.pdf",
+            "section_title": "Types of PDF forms",
+            "refined_text": "You can complete the forms by entering information and adding your signatures",
+            "page_number": 2
+        },
+        {
+            "document": "Learn Acrobat - Create and Convert_1.pdf",
+            "section_title": "2.   Optionally, select objects and text (Word) or slides (PowerPoint), as needed.",
+            "refined_text": "or Create And Send For Review",
+            "page_number": 22
+        },
+        {
+            "document": "Learn Acrobat - Create and Convert_1.pdf",
+            "section_title": "2.   Optionally, select objects and text (Word) or slides (PowerPoint), as needed.",
+            "refined_text": "(Office 2010) From the Acrobat ribbon, select Create PDF, Create And Attach to Email,",
+            "page_number": 22
+        },
+        {
+            "document": "Learn Acrobat - Request e-signatures_1.pdf",
+            "section_title": "Page 19",
+            "refined_text": "Shared web forms can be viewed on the Manage page, but do not allow editing",
+            "page_number": 19
+        },
+        {
+            "document": "Learn Acrobat - Request e-signatures_1.pdf",
+            "section_title": "Page 19",
+            "refined_text": "Download Form Field Data  - Downloads a CSV file of the field-level content for all",
+            "page_number": 19
+        },
+        {
+            "document": "Learn Acrobat - Create and Convert_1.pdf",
+            "section_title": "Create a blank PDF",
+            "refined_text": "On the leŌ rail, select  Blank page , and then select  Create",
+            "page_number": 11
+        },
+        {
+            "document": "Learn Acrobat - Create and Convert_1.pdf",
+            "section_title": "Create a blank PDF",
+            "refined_text": "You can create a blank PDF, rather than beginning with a file, a clipboard image, or scanning",
+            "page_number": 11
+        },
+        {
+            "document": "Learn Acrobat - Create and Convert_1.pdf",
+            "section_title": "Page 21",
+            "refined_text": "create PDFs, such as Acrobat Distiller, PDFMaker, and the Acrobat application itself",
+            "page_number": 21
+        },
+        {
+            "document": "Learn Acrobat - Create and Convert_1.pdf",
+            "section_title": "Page 21",
+            "refined_text": "Creates the PDF so that it conforms to the selected ISO standard for long-term preservation of",
+            "page_number": 21
+        },
+        {
+            "document": "Learn Acrobat - Fill and Sign.pdf",
+            "section_title": "You can change a flat form to a fillable form by either using the  Prepare Form  tool or",
+            "refined_text": "Acrobat and Acrobat Reader users can use the Fill & Sign tool",
+            "page_number": 12
+        },
+        {
+            "document": "Learn Acrobat - Fill and Sign.pdf",
+            "section_title": "You can change a flat form to a fillable form by either using the  Prepare Form  tool or",
+            "refined_text": "to fill in flat forms",
+            "page_number": 12
+        }
+    ]
+}
